@@ -42,7 +42,9 @@ export class LoudInputs extends LitElement {
 
     this.__input = this.querySelector('*');
     this.addEventListener('mousedown', this.__handleMouseDown);
+    this.addEventListener('keydown', this.__handleMouseDown);
     this.addEventListener('mouseup', this.__handleMouseUp);
+    this.addEventListener('keyup', this.__handleMouseUp);
   }
 
   disconnectedCallback() {
@@ -59,12 +61,24 @@ export class LoudInputs extends LitElement {
   }
 
   __handleMouseDown(event) {
+    if (event.type.includes('key')) {
+      if (event.keyCode === 32) {
+        this.__playSound('down');
+      }
+      return;
+    }
     if (isTargetValid(event.target)) {
       this.__playSound('down');
     }
   }
 
   __handleMouseUp(event) {
+    if (event.type.includes('key')) {
+      if (event.keyCode === 32) {
+        this.__playSound('up');
+      }
+      return;
+    }
     if (isTargetValid(event.target)) {
       this.__playSound('up');
     }
