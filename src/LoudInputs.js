@@ -24,12 +24,16 @@ export class LoudInputs extends LitElement {
   static get properties() {
     return {
       sound: { type: String },
+      playing: { type: Boolean },
     };
   }
 
   constructor() {
     super();
     this.sound = 'click';
+    this.playing = false;
+
+    this.audioQueue = [];
     this.masterGainNode = null;
     this.audioContext = new AudioContext();
     this.oscillator = this.audioContext.createOscillator(this.masterGainNode);
@@ -91,27 +95,50 @@ export class LoudInputs extends LitElement {
   __playSound(eventType) {
     const { audioContext, oscillator, gainNode } = this;
 
-    switch (eventType) {
-      case 'down':
-        oscillator.frequency.value = 150;
-        break;
-      case 'up':
-        oscillator.frequency.value = 200;
-        break;
-      default:
-        break;
+    this.audioQueue.push({
+      play: () =>
+        new Promise(resolve => {
+          switch (eventType) {
+            case 'down':
+              oscillator.frequency.value = 150;
+              break;
+            case 'up':
+              oscillator.frequency.value = 200;
+              break;
+            default:
+              break;
+          }
+
+          gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(1, audioContext.currentTime + 0.03);
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+
+          setTimeout(() => {
+            gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.03);
+            resolve();
+          }, 50);
+        }),
+    });
+
+    // this doesn't work because executes on all events
+    const playQueue = () => {
+      if (this.audioQueue.length > 0) {
+        this.audioQueue
+          .shift()
+          .play()
+          .then(() => {
+            playQueue();
+          });
+      } else {
+        this.playing = false;
+      }
+    };
+
+    if (!this.playing) {
+      this.playing = true;
+      playQueue();
     }
-
-    gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(1, audioContext.currentTime + 0.03);
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    // add some sort of sound-queue?
-
-    setTimeout(() => {
-      gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.03);
-    }, 50);
   }
 }
