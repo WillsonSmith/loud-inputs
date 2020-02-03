@@ -9,6 +9,8 @@ storiesOf('loud-inputs', module)
   .add(
     'Alternative Title',
     () => html`
-      <loud-inputs .title=${'Something else'}></loud-inputs>
+      <loud-inputs>
+        <label>Check to play sound: <input type="checkbox"/></label>
+      </loud-inputs>
     `,
   );
