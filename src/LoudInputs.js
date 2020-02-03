@@ -98,6 +98,8 @@ export class LoudInputs extends LitElement {
     this.audioQueue.push({
       play: () =>
         new Promise(resolve => {
+          const rampDelay = 0.03;
+
           switch (eventType) {
             case 'down':
               oscillator.frequency.value = 150;
@@ -110,19 +112,21 @@ export class LoudInputs extends LitElement {
           }
 
           gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
-          gainNode.gain.exponentialRampToValueAtTime(1, audioContext.currentTime + 0.03);
+          gainNode.gain.exponentialRampToValueAtTime(1, audioContext.currentTime + rampDelay);
           oscillator.connect(gainNode);
           gainNode.connect(audioContext.destination);
 
           setTimeout(() => {
             gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.03);
+            gainNode.gain.exponentialRampToValueAtTime(
+              0.0001,
+              audioContext.currentTime + rampDelay,
+            );
             resolve();
-          }, 50);
+          }, rampDelay * 1000 * 2);
         }),
     });
 
-    // this doesn't work because executes on all events
     const playQueue = () => {
       if (this.audioQueue.length > 0) {
         this.audioQueue
@@ -136,6 +140,7 @@ export class LoudInputs extends LitElement {
       }
     };
 
+    // this works but is creating clicks
     if (!this.playing) {
       this.playing = true;
       playQueue();
